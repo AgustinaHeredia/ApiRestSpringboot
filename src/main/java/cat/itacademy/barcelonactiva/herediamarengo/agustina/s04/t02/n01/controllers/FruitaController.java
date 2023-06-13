@@ -1,33 +1,32 @@
 package cat.itacademy.barcelonactiva.herediamarengo.agustina.s04.t02.n01.controllers;
 
 import cat.itacademy.barcelonactiva.herediamarengo.agustina.s04.t02.n01.model.domain.Fruta;
-import cat.itacademy.barcelonactiva.herediamarengo.agustina.s04.t02.n01.model.repository.FrutaRepository;
+import cat.itacademy.barcelonactiva.herediamarengo.agustina.s04.t02.n01.model.services.FrutaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/fruta")
 public class FruitaController {
 
-    private final FrutaRepository frutaRepository;
+    private final FrutaService frutaService;
 
     @Autowired
-    public FruitaController(FrutaRepository frutaRepository) {
-        this.frutaRepository = frutaRepository;
+    public FruitaController(FrutaService frutaService) {
+        this.frutaService = frutaService;
     }
 
     @PostMapping("/add")
     public ResponseEntity<Fruta> addFruta(@RequestBody Fruta fruta) {
-        if (fruta.getId() != 0 && frutaRepository.existsById(fruta.getId())) {
+        if (fruta.getId() != 0 && frutaService.getOne(fruta.getId()) != null) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        Fruta nuevaFruta = frutaRepository.save(fruta);
+        Fruta nuevaFruta = frutaService.add(fruta);
         return new ResponseEntity<>(nuevaFruta, HttpStatus.CREATED);
     }
 
@@ -37,44 +36,42 @@ public class FruitaController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        Optional<Fruta> frutaExistente = frutaRepository.findById(fruta.getId());
-        if (frutaExistente.isEmpty()) {
+        Fruta frutaExistente = frutaService.getOne(fruta.getId());
+        if (frutaExistente == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
-        Fruta frutaExistenteActualizada = frutaExistente.get();
-        frutaExistenteActualizada.setNombre(fruta.getNombre());
-        frutaExistenteActualizada.setCantidadQuilos(fruta.getCantidadQuilos());
-        Fruta frutaActualizada = frutaRepository.save(frutaExistenteActualizada);
+        frutaExistente.setNombre(fruta.getNombre());
+        frutaExistente.setCantidadQuilos(fruta.getCantidadQuilos());
+        Fruta frutaActualizada = frutaService.upd(frutaExistente);
 
         return new ResponseEntity<>(frutaActualizada, HttpStatus.OK);
     }
 
-
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<Void> deleteFruta(@PathVariable int id) {
-        Optional<Fruta> frutaExistente = frutaRepository.findById(id);
-        if (frutaExistente.isEmpty()) {
+        Fruta frutaExistente = frutaService.getOne(id);
+        if (frutaExistente == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
-        frutaRepository.deleteById(id);
+        frutaService.delete(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @GetMapping("/getOne/{id}")
     public ResponseEntity<Fruta> getFruta(@PathVariable int id) {
-        Optional<Fruta> frutaExistente = frutaRepository.findById(id);
-        if (frutaExistente.isEmpty()) {
+        Fruta frutaExistente = frutaService.getOne(id);
+        if (frutaExistente == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
 
-        return new ResponseEntity<>(frutaExistente.get(), HttpStatus.OK);
+        return new ResponseEntity<>(frutaExistente, HttpStatus.OK);
     }
 
     @GetMapping("/getAll")
     public ResponseEntity<List<Fruta>> getAllFrutas() {
-        List<Fruta> frutas = frutaRepository.findAll();
+        List<Fruta> frutas = frutaService.getAll();
         return new ResponseEntity<>(frutas, HttpStatus.OK);
     }
 }
